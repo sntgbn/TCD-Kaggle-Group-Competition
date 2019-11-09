@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import myvolts_processing as mvp
 
 '''
 Comments:
@@ -65,13 +66,13 @@ print("Matrix shape: ", data.shape)
 print("Data columns: ", data.columns)
 
 
-blogX = data.loc[data['organization_id'] == 8].values
-jabRefX = data.loc[data['organization_id'] == 1].values
-myVoltX = data.loc[data['organization_id'] == 4].values
+blogX = data.loc[data['organization_id'] == 8].copy()
+jabRefX = data.loc[data['organization_id'] == 1].copy()
+myVoltX = data.loc[data['organization_id'] == 4].copy()
 
 
 print("\nInspect missing Joeran Blog Data:")
-allNans = inspect_missing_data(blogX)
+allNans = inspect_missing_data(blogX.values)
 print("Columns that have all Nans: ", allNans)
 #print("Inspecting timezone: ")
 #inspect_timezone(blogX)
@@ -80,7 +81,7 @@ print("Columns that have all Nans: ", allNans)
 print("Joeran Dataset Size: ", blogX.shape)
 
 print("\nInspecting missing jabRef Data:")
-allNans = inspect_missing_data(jabRefX)
+allNans = inspect_missing_data(jabRefX.values)
 print("Columns that have all Nans: ", allNans)
 #print("Inspecting timezone: ")
 #inspect_timezone(jabRefX)
@@ -89,10 +90,22 @@ print("Columns that have all Nans: ", allNans)
 print("jabRef Dataset Size: ", jabRefX.shape)
 
 print("\nInspect missing myVolt Data: ")
-allNans = inspect_missing_data(myVoltX)
+allNans = inspect_missing_data(myVoltX.values)
 print("Columns that have all Nans: ", allNans)
 #print("Inspecting timezone:")
 #inspect_timezone(myVoltX)
 #print("Checking for single value columns: ")
 #only_one_val_in_columns(myVoltX)
 print("myVolt Dataset Size: ", myVoltX.shape)
+
+# Processing all data as if it were myvolts
+# myvoltX = data
+myVoltX = mvp.delete_nan_columns(myVoltX, allNans)
+myVoltX = mvp.delete_irrelevant_myvolts_columns(myVoltX)
+myVoltX = mvp.replace_nan_constant(myVoltX)
+myVoltX = mvp.replace_nan_mean(myVoltX)
+import pdb; pdb.set_trace();
+print('Check if cleanup worked')
+myVoltX.loc[myVoltX['query_identifier'] == r'\N']
+# del training_data['Instance']
+# del prediction_data['Instance']
