@@ -10,13 +10,13 @@ def delete_nan_columns(data_frame, list_all_nans):
 
 def delete_irrelevant_myvolts_columns(data_frame):
     irrelevant_columns = ['recommendation_set_id', 'user_id', 'session_id',\
-                          'query_document_id', 'query_detected_language',\
-                          'abstract_detected_language', 'organization_id',\
+                          'query_document_id', 'organization_id',\
                           'application_type', 'response_delivered',\
-                          'app_lang']
+                          'number_of_recs_in_set']
     # Language fields were mostly english
     # Application type was mostly e-commerce
     # response delivered seemed irrelevant
+    # Should recommended algorithm ID used be removed?
     for column in irrelevant_columns:
         del data_frame[column]
     return data_frame
@@ -26,9 +26,37 @@ def replace_nan_constant(data_frame):
     # Query Identifier CLeanup
     data_frame['query_identifier'] = data_frame['query_identifier'].replace(r'\N', 'Unknown')
     data_frame['query_identifier'] = data_frame['query_identifier'].astype(str)
+    # Item Type Cleanup
     data_frame['item_type'] = data_frame['item_type'].replace(r'\N', 'Unknown')
     data_frame['item_type'] = data_frame['item_type'].astype(str)
-    # Next Column cleanup
+    # Country by IP Cleanup
+    data_frame['country_by_ip'] = data_frame['country_by_ip'].replace(r'\N', 'DE')
+    data_frame['country_by_ip'] = data_frame['country_by_ip'].astype(str)
+    # CBF Parser Cleanup
+    data_frame['cbf_parser'] = data_frame['cbf_parser'].replace(r'\N', 'Uknown')
+    data_frame['cbf_parser'] = data_frame['cbf_parser'].astype(str)
+    # Language Columns Parser Cleanup
+    # Should these be removed instead?
+    data_frame['query_detected_language'] = data_frame['query_detected_language'].replace(r'\N', 'Unknown')
+    data_frame['query_detected_language'] = data_frame['query_detected_language'].astype(str)
+    data_frame['abstract_detected_language'] = data_frame['abstract_detected_language'].replace(r'\N', 'Unknown')
+    data_frame['abstract_detected_language'] = data_frame['abstract_detected_language'].astype(str)
+    data_frame['app_lang'] = data_frame['app_lang'].replace(r'\N', 'Unknown')
+    data_frame['app_lang'] = data_frame['app_lang'].astype(str)
+    # TIME Columns Parser Cleanup
+    # Should these be removed instead?
+    data_frame['local_time_of_request'] = data_frame['local_time_of_request'].replace(r'\N', 'Unknown')
+    data_frame['local_time_of_request'] = data_frame['local_time_of_request'].astype(str)
+    data_frame['local_hour_of_request'] = data_frame['local_hour_of_request'].replace(r'\N', 'Unknown')
+    data_frame['local_hour_of_request'] = data_frame['local_hour_of_request'].astype(str)
+    data_frame['timezone_by_ip'] = data_frame['timezone_by_ip'].replace(r'\N', 'Unknown')
+    data_frame['timezone_by_ip'] = data_frame['timezone_by_ip'].astype(str)
+    data_frame['time_recs_recieved'] = data_frame['time_recs_recieved'].replace(r'\N', 'Unknown')
+    data_frame['time_recs_recieved'] = data_frame['time_recs_recieved'].astype(str)
+    data_frame['time_recs_displayed'] = data_frame['time_recs_recieved'].replace(r'\N', 'Unknown')
+    data_frame['time_recs_displayed'] = data_frame['time_recs_displayed'].astype(str)
+    data_frame['time_recs_viewed'] = data_frame['time_recs_viewed'].replace(r'\N', 'Unknown')
+    data_frame['time_recs_viewed'] = data_frame['time_recs_viewed'].astype(str)
     return data_frame
 
 def replace_nan_mean(data_frame):
@@ -52,4 +80,6 @@ def replace_nan_mean(data_frame):
     data_frame['abstract_word_count'] = data_frame['abstract_word_count'].replace(r'\N', np.NaN)
     data_frame['abstract_word_count'] = imputer.fit_transform(data_frame['abstract_word_count'].values.reshape(-1,1))
     data_frame['abstract_word_count'] = data_frame['abstract_word_count'].astype(int)
+    # Should these be removed instead?
+    data_frame['time_recs_viewed'] = imputer.fit_transform(data_frame['abstract_word_count'].values.reshape(-1,1))
     return data_frame
