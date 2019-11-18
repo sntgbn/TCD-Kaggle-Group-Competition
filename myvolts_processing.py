@@ -12,7 +12,7 @@ def delete_irrelevant_myvolts_columns(data_frame):
     irrelevant_columns = ['user_id', 'session_id',\
                           'query_document_id', 'organization_id',\
                           'application_type', 'response_delivered',\
-                          'number_of_recs_in_set', 'clicks', 'ctr', 'rec_processing_time']
+                          'number_of_recs_in_set', 'rec_processing_time']
     # Language fields were mostly english
     # Application type was mostly e-commerce
     # response delivered seemed irrelevant
@@ -64,8 +64,8 @@ def replace_nan_constant(data_frame):
     data_frame['time_recs_recieved'] = data_frame['time_recs_recieved'].replace(r'\N', 'Unknown')
     data_frame['time_recs_recieved'] = data_frame['time_recs_recieved'].replace(np.NaN, 'Unknown')
     data_frame['time_recs_recieved'] = data_frame['time_recs_recieved'].astype(str)
-    data_frame['time_recs_displayed'] = data_frame['time_recs_recieved'].replace(r'\N', 'Unknown')
-    data_frame['time_recs_recieved'] = data_frame['time_recs_recieved'].replace(np.NaN, 'Unknown')
+    data_frame['time_recs_displayed'] = data_frame['time_recs_displayed'].replace(r'\N', 'Unknown')
+    data_frame['time_recs_displayed'] = data_frame['time_recs_displayed'].replace(np.NaN, 'Unknown')
     data_frame['time_recs_displayed'] = data_frame['time_recs_displayed'].astype(str)
     data_frame['time_recs_viewed'] = data_frame['time_recs_viewed'].replace(r'\N', 'Unknown')
     data_frame['time_recs_viewed'] = data_frame['time_recs_viewed'].replace(np.NaN, 'Unknown')
@@ -89,6 +89,16 @@ def replace_nan_constant(data_frame):
     data_frame['search_abstract'] = data_frame['search_abstract'].replace(r'\N', 'Unknown')
     data_frame['search_abstract'] = data_frame['search_abstract'].replace(np.NaN, 'Unknown')
     data_frame['search_abstract'] = data_frame['search_abstract'].astype(str)
+
+    # Times Clicks and CTR
+    data_frame['clicks'] = data_frame['clicks'].replace(r'\N', 0)
+    data_frame['clicks'] = data_frame['clicks'].replace(np.NaN, 0)
+    data_frame['clicks'] = data_frame['clicks'].replace('nA', 0)
+    data_frame['clicks'] = data_frame['clicks'].astype(int)
+    data_frame['ctr'] = data_frame['ctr'].replace(r'\N', 0)
+    data_frame['ctr'] = data_frame['ctr'].replace(np.NaN, 0)
+    data_frame['ctr'] = data_frame['ctr'].replace('nA', 0)
+    data_frame['ctr'] = data_frame['ctr'].astype(int)
     return data_frame
 
 def replace_nan_mean(data_frame):
@@ -112,9 +122,6 @@ def replace_nan_mean(data_frame):
     data_frame['abstract_word_count'] = data_frame['abstract_word_count'].replace(r'\N', np.NaN)
     data_frame['abstract_word_count'] = imputer.fit_transform(data_frame['abstract_word_count'].values.reshape(-1,1))
     data_frame['abstract_word_count'] = data_frame['abstract_word_count'].astype(int)
-    # Should these be removed instead?
-    data_frame['time_recs_viewed'] = imputer.fit_transform(data_frame['abstract_word_count'].values.reshape(-1,1))
-    data_frame['abstract_word_count'] = data_frame['abstract_word_count'].astype(int)
     # Recommendation algorithm ID
     data_frame['recommendation_algorithm_id_used'] = data_frame['recommendation_algorithm_id_used'].replace(r'\N', np.NaN)
     data_frame['recommendation_algorithm_id_used'] = imputer.fit_transform(data_frame['recommendation_algorithm_id_used'].values.reshape(-1,1))
@@ -123,10 +130,10 @@ def replace_nan_mean(data_frame):
     data_frame['hour_request_received'] = data_frame['hour_request_received'].replace(r'\N', np.NaN)
     data_frame['hour_request_received'] = imputer.fit_transform(data_frame['hour_request_received'].values.reshape(-1,1))
     data_frame['hour_request_received'] = data_frame['hour_request_received'].astype(int)
-    # Times REC Viewed
-    data_frame['time_recs_viewed'] = data_frame['time_recs_viewed'].replace(r'\N', np.NaN)
-    data_frame['time_recs_viewed'] = imputer.fit_transform(data_frame['time_recs_viewed'].values.reshape(-1,1))
-    data_frame['time_recs_viewed'] = data_frame['time_recs_viewed'].astype(int)
+    # # Times REC Viewed
+    # data_frame['time_recs_viewed'] = data_frame['time_recs_viewed'].replace(r'\N', np.NaN)
+    # data_frame['time_recs_viewed'] = imputer.fit_transform(data_frame['time_recs_viewed'].values.reshape(-1,1))
+    # data_frame['time_recs_viewed'] = data_frame['time_recs_viewed'].astype(int)
     return data_frame
 
 def convert_float_int(data_frame):

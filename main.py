@@ -122,12 +122,15 @@ predictionMyVoltX = mvp.delete_nan_columns(prediction_data, predictionAllNans).c
 # Deleting Irrelevant Columns
 myVoltX = mvp.delete_irrelevant_myvolts_columns(myVoltX)
 predictionMyVoltX = mvp.delete_irrelevant_myvolts_columns(predictionMyVoltX)
+
 # Deleting NANs for constants
 myVoltX = mvp.replace_nan_constant(myVoltX)
 predictionMyVoltX = mvp.replace_nan_constant(predictionMyVoltX)
 # Replacing NANs for Mean values
 myVoltX = mvp.replace_nan_mean(myVoltX)
 predictionMyVoltX = mvp.replace_nan_mean(predictionMyVoltX)
+
+import pdb; pdb.set_trace();
 # # Converting floats to INTs for catboost
 # myVoltX = mvp.convert_float_int(myVoltX)
 # predictionMyVoltX = mvp.convert_float_int(predictionMyVoltX)

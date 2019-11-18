@@ -22,5 +22,15 @@ def train_catboost(training_data, prediction_data):
     category_indexes = np.where(training_data.dtypes == np.object)[0]
     model=CatBoostRegressor(iterations=1000, depth=5, learning_rate=0.1)
     model.fit(x_train, y_train, cat_features=category_indexes, eval_set=(x_test, y_test), plot=True)
-    submission_data['set_clicked'] = model.predict(prediction_data)[0:9145].astype(int)
+    prediction_data = prediction_data.dropna(how='all', subset=['recommendation_set_id'])
+    import pdb; pdb.set_trace();
+    submission = model.predict(prediction_data)
+    median = np.median(submission)
+    submission_bool = (submission >=median)
+    submission_1_0 = submission_bool.astype(int)
+    submission = np.ceil(submission)
+    normalized = (submission - submission.min())/(submission.max() - submission.min())
+
+    quantile = np.percentile(submission, 90)
+    submission_data['set_clicked'] = (submission >=quantile).astype(int)
     submission_data.to_csv('submission.csv', index=False)
