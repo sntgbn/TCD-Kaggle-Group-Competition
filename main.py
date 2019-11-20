@@ -41,18 +41,6 @@ def inspect_timezone(X):
                 print("Usertimezone val: ", usertimezone[i])
                 print("timezoneip val: ", timezoneip[i])
 
-#TODO:
-def only_one_val_in_columns(X, colList):
-    j = 0
-    for col in colList:
-        values = {}
-        for i in X[:,j]:
-            if i not in values:
-                values[i] = 1
-            else:
-                values[i] = values[i] + 1
-        print("There are ", len(values), " unique items in ", col)
-        j = j + 1
 
 data = pd.read_csv('training.csv')
 data_test = pd.read_csv('test.csv')
@@ -66,23 +54,17 @@ blogY = blogX['set_clicked']
 blogX = blogX.drop(columns=['local_time_of_request', 'local_hour_of_request', 'organization_id', 'response_delivered','user_id','session_id',
     'document_language_provided','year_published','number_of_authors','first_author_id','num_pubs_by_first_author','app_version','app_lang',
     'user_os','user_os_version','user_java_version','user_timezone', 'application_type', 'item_type','abstract_detected_language'
-    ,'number_of_recs_in_set','set_clicked'])
+    ,'number_of_recs_in_set','set_clicked', 'time_recs_recieved', 'time_recs_displayed', 'time_recs_viewed'])
 
 #Test Data
 blogX_test = data_test.loc[data_test['organization_id'] == 8]
 blogX_test = blogX_test.drop(columns=['local_time_of_request', 'local_hour_of_request', 'organization_id', 'response_delivered','user_id','session_id',
     'document_language_provided','year_published','number_of_authors','first_author_id','num_pubs_by_first_author','app_version','app_lang',
     'user_os','user_os_version','user_java_version','user_timezone', 'application_type', 'item_type','abstract_detected_language'
-    ,'number_of_recs_in_set','set_clicked'])
+    ,'number_of_recs_in_set','set_clicked', 'time_recs_recieved', 'time_recs_displayed', 'time_recs_viewed'])
 
 print("\nInspect missing Joeran Blog Data:")
-#allNans = inspect_missing_data(blogX.values)
-#print("Columns that have all Nans: ", allNans)
 print("All columnns: ", blogX.columns)
-#print("Inspecting timezone: ")
-#inspect_timezone(blogX)
-#print("Checking for single value columns: ")
-#only_one_val_in_columns(blogX)
 print("Joeran Dataset Size: ", blogX.values.shape)
 
 
@@ -147,14 +129,30 @@ ss_cols = ['query_word_count', 'query_char_count', 'abstract_word_count', 'abstr
 le_cols = ['query_detected_language', 'algorithm_class', 'cbf_parser', 'search_title', 'search_keywords', 'search_abstract', 'clicks', 'ctr']
 ohe_cols = ['algorithm_class', 'cbf_parser', 'query_detected_language']
 ce_cols = ['recommendation_set_id', 'query_identifier','query_document_id', 'recommendation_algorithm_id_used']
+te_cols = ['recommendation_set_id']
 date_cols = ['request_received']
 sb_cols = ['clicks', 'ctr']
 SB_VAL = 0
 
+timezones = bp.find_most_common_timezone_num(blogX, 'country_by_ip', 'timezone_by_ip')
+(blogX, blogX_test) = bp.replace_with_most_common_timezone_num(blogX, blogX_test, ['country_by_ip', 'timezone_by_ip'], timezones)
+blogX = blogX.drop(columns=['country_by_ip'])
+blogX_test = blogX_test.drop(columns=['country_by_ip'])
 
+listOfBlogXCols = list(blogX.columns)
 only_one_val_in_columns(blogX.values, listOfBlogXCols)
 print("\nNew size: ", blogX.shape)
 
+indexes = []
+ones = 0
+for i in range(blogY.size):
+    if blogY.iloc[i] == 1:
+        indexes.append(i)
+        ones = ones + 1
+print("Number of ones in training set", ones)
+print((ones/blogY.size), "% of training are ones")
+
+blogX.iloc[indexes,:].to_csv("alltheones.csv")
 
 (blogX, blogX_test) = bp.remove_time_from_date(blogX, blogX_test, date_cols)
 firstDate = blogX['request_received'].iloc[0]
@@ -163,15 +161,27 @@ dayZero = datetime.strptime(firstDate, '%d/%m/%Y')
 (blogX, blogX_test) = bp.replace_nan_with_unknown(blogX, blogX_test, cat_cols)
 (blogX, blogX_test) = bp.replace_nan_with_mean(blogX, blogX_test, num_cols)
 (blogX, blogX_test) = bp.set_binary(blogX, blogX_test, sb_cols, SB_VAL)
-(blogX, blogX_test) = bp.cat_encode(blogX, blogX_test, ce_cols,blogY)
+(blogX, blogX_test) = bp.cat_encode(blogX, blogX_test, ce_cols, blogY)
+(blogX, blogX_test) = bp.target_encode(blogX, blogX_test, te_cols, blogY)
 (blogX, blogX_test) = bp.scale(blogX, blogX_test, ss_cols)
 (blogX, blogX_test) = bp.label_encode(blogX, blogX_test, le_cols)
 (blogX, blogX_test) = bp.one_hot_encode(blogX, blogX_test, ohe_cols)
 print("End of preprocessing...")
 
+print("Saving processed training data")
+blogX.to_csv("proc_train.csv")
 
 print("Starting Logistic Regression..")
 clf = LogisticRegression(solver='lbfgs')
 clf.fit(blogX, blogY)
 res = clf.predict(blogX_test)
-np.savetxt("results.txt", res, fmt= "%f",newline='\n')
+zeros = 0
+for i in res:
+    if i == 0:
+        zeros = zeros + 1
+    else:
+        print("Found: ", i)
+
+print("Found ", zeros, " zeros")
+    
+np.savetxt("results.txt", res, fmt= "%d",newline='\n')
