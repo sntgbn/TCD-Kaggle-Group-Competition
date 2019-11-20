@@ -152,6 +152,22 @@ def replace_with_most_common_timezone_num(X, X_test, cols, timezoneDict):
     
     return (X,X_test)
 
+def recommendation_set_id_binary(X, X_test, cols, blogY):
+    for c in cols:
+        trainD = pd.concat([X, blogY], axis=1)
+        setIdRows = trainD.loc[trainD['set_clicked'] == 1]
+        setIds = setIdRows['recommendation_set_id']
+        trainD.loc[:,'recommendation_set_id'] = 0
+        trainD.loc[trainD['set_clicked'] == 1, 'recommendation_set_id'] = 1
+        X = trainD.drop(columns=['set_clicked'])
+
+        for i in range(0, X_test[c].size):
+            if (X_test[c].iloc[i] in setIds):
+                X_test[c].iloc[i] = 1
+            else:
+                X_test[c].iloc[i] = 0
+
+    return (X,X_test)
 
         
 

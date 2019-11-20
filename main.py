@@ -96,7 +96,7 @@ number_of_recs_in_set               | Not in test set
 
 
 Columns to work on:
-recommendation_set_id               | CatEncoder
+recommendation_set_id               | binary (if set_clicked == 1)
 query_identifier                    | CatEncoder
 query_word_count                    | StandardScaler
 query_char_count                    | StandardScaler
@@ -128,20 +128,21 @@ num_cols = ['query_word_count', 'query_char_count', 'abstract_word_count', 'abst
 ss_cols = ['query_word_count', 'query_char_count', 'abstract_word_count', 'abstract_char_count', 'hour_request_received', 'rec_processing_time', 'timezone_by_ip', 'request_received']
 le_cols = ['query_detected_language', 'algorithm_class', 'cbf_parser', 'search_title', 'search_keywords', 'search_abstract', 'clicks', 'ctr']
 ohe_cols = ['algorithm_class', 'cbf_parser', 'query_detected_language']
-ce_cols = ['recommendation_set_id', 'query_identifier','query_document_id', 'recommendation_algorithm_id_used']
-te_cols = ['recommendation_set_id']
+ce_cols = [ 'query_identifier','query_document_id', 'recommendation_algorithm_id_used']
 date_cols = ['request_received']
 sb_cols = ['clicks', 'ctr']
+rec_cols = ['recommendation_set_id']
 SB_VAL = 0
 
+#Timezones
 timezones = bp.find_most_common_timezone_num(blogX, 'country_by_ip', 'timezone_by_ip')
 (blogX, blogX_test) = bp.replace_with_most_common_timezone_num(blogX, blogX_test, ['country_by_ip', 'timezone_by_ip'], timezones)
 blogX = blogX.drop(columns=['country_by_ip'])
 blogX_test = blogX_test.drop(columns=['country_by_ip'])
 
 listOfBlogXCols = list(blogX.columns)
-only_one_val_in_columns(blogX.values, listOfBlogXCols)
 print("\nNew size: ", blogX.shape)
+
 
 indexes = []
 ones = 0
@@ -158,11 +159,12 @@ blogX.iloc[indexes,:].to_csv("alltheones.csv")
 firstDate = blogX['request_received'].iloc[0]
 dayZero = datetime.strptime(firstDate, '%d/%m/%Y')
 (blogX, blogX_test) = bp.date_to_int(blogX, blogX_test, date_cols, dayZero)
+(blogX, blogX_test) = bp.recommendation_set_id_binary(blogX, blogX_test, rec_cols, blogY)
 (blogX, blogX_test) = bp.replace_nan_with_unknown(blogX, blogX_test, cat_cols)
 (blogX, blogX_test) = bp.replace_nan_with_mean(blogX, blogX_test, num_cols)
 (blogX, blogX_test) = bp.set_binary(blogX, blogX_test, sb_cols, SB_VAL)
 (blogX, blogX_test) = bp.cat_encode(blogX, blogX_test, ce_cols, blogY)
-(blogX, blogX_test) = bp.target_encode(blogX, blogX_test, te_cols, blogY)
+#(blogX, blogX_test) = bp.target_encode(blogX, blogX_test, te_cols, blogY)
 (blogX, blogX_test) = bp.scale(blogX, blogX_test, ss_cols)
 (blogX, blogX_test) = bp.label_encode(blogX, blogX_test, le_cols)
 (blogX, blogX_test) = bp.one_hot_encode(blogX, blogX_test, ohe_cols)
@@ -185,3 +187,5 @@ for i in res:
 print("Found ", zeros, " zeros")
     
 np.savetxt("results.txt", res, fmt= "%d",newline='\n')
+
+print("There are : ", len(blogX['recommendation_set_id'].unique()), " unique items in the recommendation_set_id column in blogX")
