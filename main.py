@@ -62,59 +62,6 @@ print("jab columns: " , jabX.columns)
 print("jab shahpe: " , jabX.shape)
 
 
-'''
-Remove Columns:
-recommendation_set_id               | No recommendation_set_ids in the test set result in a 1 in the training set
-user_id                             | Nan
-session_id                          | Nan
-document_language_provided          | Nan
-year_published                      | Nan
-number_of_authors                   | Nan
-first_authord_id                    | Nan
-num_pubs_by_first_author            | Nan
-app_version                         | Nan
-app_lang                            | Nan
-user_os                             | Nan
-user_os_version                     | Nan
-user_java_version                   | Nan
-user_timezone                       | Nan
-application_type                    | Only 'blog' with some 0s
-item_type                           | Only 'article' with some Nans
-abstrat_detected_language           | Only 'en' with some Nans
-local_time_of_request               | Mostly Nans - Can infer local time from serverside time of request
-local_hour_of_request               | Mostly Nans - Can infer local time from serverside time of request
-response_delivered                  | Dependent on hour of request and processing time
-time_recs_received                  | Not in test set
-time_recs_displayed                 | Not in test set
-time_recs_viewed                    | Not in test set
-number_of_recs_in_set               | Not in test set
-
-
-Columns to work on:
-query_identifier                    | CatEncoder
-query_word_count                    | StandardScaler
-query_char_count                    | StandardScaler
-query_detected_language             | OneHotEncoder
-query_document_id                   | CatEncoder
-abstract_word_count                 | StandardScaler
-abstract_char_count                 | StandardScaler
-request_received                    | Day - DayZero -> StandardScaler
-hour_request_received               | StandardScaler
-rec_processing_time                 | StandardScaler
-country_by_ip                       | Get average timezone value associated with each country (Mode). Set all timezone strings/'\n's to that timezone value
-timezone_by_ip                      | Set to numerical timezone -> standardscaler
-recommendation_algorithm_id_used    | CatEncoder
-algorithm_class                     | LabelEncode -> OneHotEncode
-cbf_parser                          | LabelEncode -> OneHotEncode
-search_title                        | LabelEncode
-search_keywords                     | LabelEncode
-search_abstract                     | LabelEncode
-clicks                              | Binary -> LabelEncode
-ctr                                 | Binary -> LabelEncode
-set_clicked                         | Target 
-'''
-
-
 cat_cols = [ 'query_identifier', 'query_detected_language', 'query_document_id', 'recommendation_algorithm_id_used', 'algorithm_class',
             'cbf_parser', 'search_title', 'search_keywords', 'search_abstract', 'clicks', 'ctr']
 num_cols = ['query_word_count', 'query_char_count', 'abstract_word_count', 'abstract_char_count', 'request_received', 'hour_request_received', 'rec_processing_time', 'timezone_by_ip']
