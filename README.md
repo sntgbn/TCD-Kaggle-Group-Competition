@@ -1,4 +1,4 @@
-# TCD-Kaggle-Group-Competition
+# TCD-Kaggle-Group-Competition-Team-8
 
 TCD ML Comp. 2019/20 - Rec Alg Click Pred (Group)
 Aaron Duggan - F0EB02075C46301D67D9
