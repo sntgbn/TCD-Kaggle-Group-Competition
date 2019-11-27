@@ -3,73 +3,68 @@ import numpy as np
 import blogPreprocessing as bp
 from datetime import datetime
 from sklearn.linear_model import LogisticRegression
+from sklearn import svm
 from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neural_network import MLPClassifier
+from catboost import CatBoostRegressor, CatBoostClassifier
+import time
 
-#Returns list of Columns that have all Nans - uses columnNumber from original Data
-#Must be altered if planning on calling after removing columns
-def inspect_missing_data(X):
-    print("Inspecting the Missing Data:")
-    listOfAllNans = []
-    columnList = (list(data.columns))[:-1]
-    i = 0
-    for col in columnList:
-        backNCount = 0
-        notProvidedCount = 0
-        backN = "\\N"
-        notProvided = "Not Provided"
-        for j in X[:,i]:
-            if j == backN:
-                backNCount = backNCount + 1
-            if j == notProvided:
-                notProvidedCount = notProvidedCount + 1
-        print("There are", (pd.isnull(X[:,i]).sum() + backNCount + notProvidedCount),"nan values in", col, "column")
-        i = i + 1
-        if X[:,i].size == backNCount:
-            listOfAllNans.append(col)
-    return listOfAllNans
-
-#Returns list of Columns that have all Nans - uses columnNumber from original Data
-#Must be altered if planning on calling after removing columns
-def inspect_timezone(X):
-    usertimezone = X[:,(list(data.columns).index("user_timezone"))]
-    timezoneip = X[:,(list(data.columns).index("timezone_by_ip"))]
-    for i in range(0, usertimezone.size):
-        if usertimezone[i] != "\\N" and usertimezone[i] != "Not provided":
-            if usertimezone[i] == timezoneip[i]:
-                print("Same value for user_timezone and time_zone_ip")
-            else:
-                print("Usertimezone val: ", usertimezone[i])
-                print("timezoneip val: ", timezoneip[i])
-
-
+#Load data
 data = pd.read_csv('training.csv')
 data_test = pd.read_csv('test.csv')
-print("Matrix shape: ", data.shape)
-print("Data columns: ", data.columns)
+data_test = data_test.iloc[0:9145, :]
 
-
+#Print data summary
+print("Training shape: ", data.shape)
+print("Training columns: ", data.columns)
+print("Test shape: ", data_test.shape)
+print("Test columns: " , data_test.columns)
+    
 #Training Data
-blogX = data.loc[data['organization_id'] == 8]
-blogY = blogX['set_clicked']
-blogX = blogX.drop(columns=['local_time_of_request', 'local_hour_of_request', 'organization_id', 'response_delivered','user_id','session_id',
+volts = data.loc[data['organization_id'] == 1]
+blog = data.loc[data['organization_id'] == 8]
+blogVoltsX = pd.concat([volts, blog]) #Volts #1, Blog #2
+blogVoltsY = blogVoltsX['set_clicked']
+blogVoltsX = blogVoltsX.drop(columns=['recommendation_set_id','local_time_of_request', 'local_hour_of_request', 'organization_id', 'response_delivered','user_id','session_id',
     'document_language_provided','year_published','number_of_authors','first_author_id','num_pubs_by_first_author','app_version','app_lang',
     'user_os','user_os_version','user_java_version','user_timezone', 'application_type', 'item_type','abstract_detected_language'
+    ,'number_of_recs_in_set','set_clicked', 'time_recs_recieved', 'time_recs_displayed', 'time_recs_viewed'])
+
+jabX = data.loc[data['organization_id'] == 1]
+jabY = jabX['set_clicked']
+jabX = jabX.drop(columns=['query_identifier', 'recommendation_set_id','local_time_of_request', 'local_hour_of_request', 'organization_id', 'response_delivered','user_id','session_id',
+    'document_language_provided','app_version','app_lang',
+    'user_os','user_os_version','user_java_version','user_timezone', 'item_type','abstract_detected_language'
     ,'number_of_recs_in_set','set_clicked', 'time_recs_recieved', 'time_recs_displayed', 'time_recs_viewed'])
 
 #Test Data
+voltsX_test = data_test.loc[data_test['organization_id'] == 1]
 blogX_test = data_test.loc[data_test['organization_id'] == 8]
-blogX_test = blogX_test.drop(columns=['local_time_of_request', 'local_hour_of_request', 'organization_id', 'response_delivered','user_id','session_id',
+blogVoltsX_test = pd.concat([voltsX_test, blogX_test])
+blogVoltsX_test = blogVoltsX_test.drop(columns=['recommendation_set_id','local_time_of_request', 'local_hour_of_request', 'organization_id', 'response_delivered','user_id','session_id',
     'document_language_provided','year_published','number_of_authors','first_author_id','num_pubs_by_first_author','app_version','app_lang',
     'user_os','user_os_version','user_java_version','user_timezone', 'application_type', 'item_type','abstract_detected_language'
     ,'number_of_recs_in_set','set_clicked', 'time_recs_recieved', 'time_recs_displayed', 'time_recs_viewed'])
 
-print("\nInspect missing Joeran Blog Data:")
-print("All columnns: ", blogX.columns)
-print("Joeran Dataset Size: ", blogX.values.shape)
+jabX_test = data_test.loc[data['organization_id'] == 1]
+jabX_test = jabX_test.drop(columns=['query_identifier', 'recommendation_set_id','local_time_of_request', 'local_hour_of_request', 'organization_id', 'response_delivered','user_id','session_id',
+    'document_language_provided','app_version','app_lang',
+    'user_os','user_os_version','user_java_version','user_timezone', 'item_type','abstract_detected_language'
+    ,'number_of_recs_in_set','set_clicked', 'time_recs_recieved', 'time_recs_displayed', 'time_recs_viewed'])
+
+
+print("blogVolts columns: ", blogVoltsX.columns)
+print("blogVolts shape: " , blogVoltsX.shape)
+print("jab columns: " , jabX.columns)
+print("jab shahpe: " , jabX.shape)
 
 
 '''
 Remove Columns:
+recommendation_set_id               | No recommendation_set_ids in the test set result in a 1 in the training set
 user_id                             | Nan
 session_id                          | Nan
 document_language_provided          | Nan
@@ -96,7 +91,6 @@ number_of_recs_in_set               | Not in test set
 
 
 Columns to work on:
-recommendation_set_id               | binary (if set_clicked == 1)
 query_identifier                    | CatEncoder
 query_word_count                    | StandardScaler
 query_char_count                    | StandardScaler
@@ -121,71 +115,110 @@ set_clicked                         | Target
 '''
 
 
-listOfBlogXCols = list(blogX.columns)
-cat_cols = ['recommendation_set_id', 'query_identifier', 'query_detected_language', 'query_document_id',  'timezone_by_ip', 'recommendation_algorithm_id_used', 'algorithm_class',
+cat_cols = [ 'query_identifier', 'query_detected_language', 'query_document_id', 'recommendation_algorithm_id_used', 'algorithm_class',
             'cbf_parser', 'search_title', 'search_keywords', 'search_abstract', 'clicks', 'ctr']
 num_cols = ['query_word_count', 'query_char_count', 'abstract_word_count', 'abstract_char_count', 'request_received', 'hour_request_received', 'rec_processing_time', 'timezone_by_ip']
 ss_cols = ['query_word_count', 'query_char_count', 'abstract_word_count', 'abstract_char_count', 'hour_request_received', 'rec_processing_time', 'timezone_by_ip', 'request_received']
 le_cols = ['query_detected_language', 'algorithm_class', 'cbf_parser', 'search_title', 'search_keywords', 'search_abstract', 'clicks', 'ctr']
-ohe_cols = ['algorithm_class', 'cbf_parser', 'query_detected_language']
-ce_cols = [ 'query_identifier','query_document_id', 'recommendation_algorithm_id_used']
+te_cols = ['query_detected_language', 'algorithm_class', 'cbf_parser', 'query_identifier', 'query_document_id', 'recommendation_algorithm_id_used', 'algorithm_class', 'cbf_parser', 'query_detected_language']
 date_cols = ['request_received']
 sb_cols = ['clicks', 'ctr']
-rec_cols = ['recommendation_set_id']
 SB_VAL = 0
+ohe_cols = [ 'query_detected_language', 'algorithm_class', 'cbf_parser' ]
+
+
+
+jab_num_cols = ['query_word_count', 'query_char_count', 'abstract_word_count', 'abstract_char_count', 'request_received', 'hour_request_received', 'rec_processing_time', 'timezone_by_ip',
+                'year_published', 'number_of_authors', 'num_pubs_by_first_author']
+jab_cat_cols = ['application_type', 'first_author_id', 'query_detected_language', 'query_document_id', 'recommendation_algorithm_id_used', 'algorithm_class',
+            'cbf_parser', 'search_title', 'search_keywords', 'search_abstract', 'clicks', 'ctr']
+jab_sb_cols = ['clicks', 'ctr']
+JAB_SB_VAL = 0
+jab_date_cols = ['request_received']
+jab_le_cols = ['query_detected_language', 'algorithm_class', 'cbf_parser', 'search_title', 'search_keywords', 'search_abstract', 'clicks', 'ctr']
+jab_ss_cols = ['num_pubs_by_first_author', 'number_of_authors', 'year_published','query_word_count', 'query_char_count', 'abstract_word_count', 'abstract_char_count', 'hour_request_received', 'rec_processing_time', 'timezone_by_ip', 'request_received']
+jab_te_cols = ['query_detected_language', 'algorithm_class', 'cbf_parser', 'application_type', 'first_author_id', 'query_document_id', 'recommendation_algorithm_id_used', 'algorithm_class', 'cbf_parser', 'query_detected_language']
+jab_ohe_cols = ['query_detected_language', 'algorithm_class', 'cbf_parser']
 
 #Timezones
-timezones = bp.find_most_common_timezone_num(blogX, 'country_by_ip', 'timezone_by_ip')
-(blogX, blogX_test) = bp.replace_with_most_common_timezone_num(blogX, blogX_test, ['country_by_ip', 'timezone_by_ip'], timezones)
-blogX = blogX.drop(columns=['country_by_ip'])
-blogX_test = blogX_test.drop(columns=['country_by_ip'])
+print("Starting jab timezones..")
+print("Time 0")
+start = time.time()
+jab_timezones = bp.find_most_common_timezone_num(jabX, 'country_by_ip', 'timezone_by_ip')
+timeone = time.time()
+print("Time: ", timeone - start)
+(jabX, jabX_test) = bp.replace_with_most_common_timezone_num(jabX, jabX_test, ['country_by_ip', 'timezone_by_ip'], jab_timezones)
+timetwo = time.time()
+print("Time two: " , timetwo - timeone)
+print("Starting volts timezones..")
+timezones = bp.find_most_common_timezone_num(blogVoltsX, 'country_by_ip', 'timezone_by_ip')
+(blogVoltsX, blogVoltsX_test) = bp.replace_with_most_common_timezone_num(blogVoltsX, blogVoltsX_test, ['country_by_ip', 'timezone_by_ip'], timezones)
 
-listOfBlogXCols = list(blogX.columns)
-print("\nNew size: ", blogX.shape)
+#Drop country_by_ip
+blogVoltsX = blogVoltsX.drop(columns=['country_by_ip'])
+blogVoltsX_test = blogVoltsX_test.drop(columns=['country_by_ip'])
+jabX = jabX.drop(columns=['country_by_ip'])
+jabX_test = jabX_test.drop(columns=['country_by_ip'])
 
 
-indexes = []
-ones = 0
-for i in range(blogY.size):
-    if blogY.iloc[i] == 1:
-        indexes.append(i)
-        ones = ones + 1
-print("Number of ones in training set", ones)
-print((ones/blogY.size), "% of training are ones")
-
-blogX.iloc[indexes,:].to_csv("alltheones.csv")
-
-(blogX, blogX_test) = bp.remove_time_from_date(blogX, blogX_test, date_cols)
-firstDate = blogX['request_received'].iloc[0]
+print("Starting jab preprocess..")
+(jabX, jabX_test) = bp.remove_time_from_date(jabX, jabX_test, jab_date_cols)
+firstDate = jabX['request_received'].iloc[0]
 dayZero = datetime.strptime(firstDate, '%d/%m/%Y')
-(blogX, blogX_test) = bp.date_to_int(blogX, blogX_test, date_cols, dayZero)
-(blogX, blogX_test) = bp.recommendation_set_id_binary(blogX, blogX_test, rec_cols, blogY)
-(blogX, blogX_test) = bp.replace_nan_with_unknown(blogX, blogX_test, cat_cols)
-(blogX, blogX_test) = bp.replace_nan_with_mean(blogX, blogX_test, num_cols)
-(blogX, blogX_test) = bp.set_binary(blogX, blogX_test, sb_cols, SB_VAL)
-(blogX, blogX_test) = bp.cat_encode(blogX, blogX_test, ce_cols, blogY)
-#(blogX, blogX_test) = bp.target_encode(blogX, blogX_test, te_cols, blogY)
-(blogX, blogX_test) = bp.scale(blogX, blogX_test, ss_cols)
-(blogX, blogX_test) = bp.label_encode(blogX, blogX_test, le_cols)
-(blogX, blogX_test) = bp.one_hot_encode(blogX, blogX_test, ohe_cols)
+(jabX, jabX_test) = bp.date_to_int(jabX, jabX_test, jab_date_cols, dayZero)
+(jabX, jabX_test) = bp.replace_nan_with_unknown(jabX, jabX_test, jab_cat_cols)
+(jabX, jabX_test) = bp.replace_nan_with_mean(jabX, jabX_test, jab_num_cols)
+(jabX, jabX_test) = bp.set_binary(jabX, jabX_test, jab_sb_cols, JAB_SB_VAL)
+(jabX, jabX_test) = bp.target_encode(jabX, jabX_test, jab_te_cols, jabY)
+(jabX, jabX_test) = bp.scale(jabX, jabX_test, jab_ss_cols)
+#(jabX, jabX_test) = bp.label_encode(jabX, jabX_test, jab_le_cols)
+#(jabX, jabX_test) = bp.one_hot_encode(jabX, jabX_test, jab_ohe_cols)
+
+
+
+print("Starting myvolts preprocess..")
+(blogVoltsX, blogVoltsX_test) = bp.remove_time_from_date(blogVoltsX, blogVoltsX_test, date_cols)
+firstDate = blogVoltsX['request_received'].iloc[0]
+dayZero = datetime.strptime(firstDate, '%d/%m/%Y')
+(blogVoltsX, blogVoltsX_test) = bp.date_to_int(blogVoltsX, blogVoltsX_test, date_cols, dayZero)
+(blogVoltsX, blogVoltsX_test) = bp.replace_nan_with_unknown(blogVoltsX, blogVoltsX_test, cat_cols)
+(blogVoltsX, blogVoltsX_test) = bp.replace_nan_with_mean(blogVoltsX, blogVoltsX_test, num_cols)
+(blogVoltsX, blogVoltsX_test) = bp.set_binary(blogVoltsX, blogVoltsX_test, sb_cols, SB_VAL)
+(blogVoltsX, blogVoltsX_test) = bp.target_encode(blogVoltsX, blogVoltsX_test, te_cols, blogVoltsY)
+(blogVoltsX, blogVoltsX_test) = bp.scale(blogVoltsX, blogVoltsX_test, ss_cols)
+#(blogVoltsX, blogVoltsX_test) = bp.label_encode(blogVoltsX, blogVoltsX_test, le_cols)
+#(blogVoltsX, blogVoltsX_test) = bp.one_hot_encode(blogVoltsX, blogVoltsX_test, ohe_cols)
 print("End of preprocessing...")
 
+
 print("Saving processed training data")
-blogX.to_csv("proc_train.csv")
+blogVoltsX.to_csv("blogVolts_pro_train.csv")
+jabX.to_csv("jab_proc_train.csv")
 
-print("Starting Logistic Regression..")
-clf = LogisticRegression(solver='lbfgs')
-clf.fit(blogX, blogY)
-res = clf.predict(blogX_test)
-zeros = 0
+
+print("Starting blogVolts nn...")
+clf = MLPClassifier(solver='lbfgs', alpha=1e-5,
+                     hidden_layer_sizes=(15), random_state=1)
+clf.fit(blogVoltsX, blogVoltsY)
+res = clf.predict(blogVoltsX_test)
+
+
+print("Starting jab nn...")
+clf = MLPClassifier(solver='lbfgs', alpha=1e-5,
+                     hidden_layer_sizes=(15), random_state=1)
+clf.fit(jabX, jabY)
+jab_res = clf.predict(jabX_test)
+
+ones = 0
 for i in res:
-    if i == 0:
-        zeros = zeros + 1
-    else:
-        print("Found: ", i)
+    if i == 1:
+        ones = ones + 1
+for i in jab_res:
+    if i == 1:
+        ones = ones + 1
 
-print("Found ", zeros, " zeros")
-    
-np.savetxt("results.txt", res, fmt= "%d",newline='\n')
+print("Ones: ", ones)
 
-print("There are : ", len(blogX['recommendation_set_id'].unique()), " unique items in the recommendation_set_id column in blogX")
+np.savetxt("blogVolts_results.txt", res, fmt= "%d",newline='\n')
+np.savetxt("jab_results.txt", jab_res, fmt= "%d",newline='\n')
+
