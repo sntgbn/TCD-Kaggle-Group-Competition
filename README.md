@@ -1,9 +1,9 @@
 # TCD-Kaggle-Group-Competition-Team-8
 
 TCD ML Comp. 2019/20 - Rec Alg Click Pred (Group)
-Aaron Duggan - F0EB02075C46301D67D9
-Megan Swan - AF44333FE00B74408447
-Santiago Gallo Beruben - ADEEDABD6037BFD16D56
+* Aaron Duggan - F0EB02075C46301D67D9
+* Megan Swan - AF44333FE00B74408447
+* Santiago Gallo Beruben - ADEEDABD6037BFD16D56
 
 ## Getting started
 This code has the following requirements
